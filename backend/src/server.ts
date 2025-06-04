@@ -1,9 +1,9 @@
 import express, { Request, Response } from 'express';
+import indexRoute from './routes/indexRoute';
 
 const app = express();
 
-app.get('/', (req: Request, res: Response) => {
-    res.send("Server is running 123!");
-})
+app.use(express.json());
+app.use('/api', indexRoute);
 
 export default app;
