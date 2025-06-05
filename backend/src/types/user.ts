@@ -1,12 +1,9 @@
-// export interface CreateUserBody {
-//     name: string;
-//     age: number;
-//     email: string;
-// }
+export interface UserType {
+    id?: number;
+    full_name: string;
+    email: string;
+    password: string;
+    is_active?: boolean;
+    created_at?: Date;
+}
 
-// export interface User {
-//     id: number;
-//     name: string;
-//     age: number;
-//     email: string;
-// }
