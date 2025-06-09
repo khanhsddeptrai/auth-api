@@ -6,6 +6,7 @@ import { User } from '../drizzle/schema';
 import { z } from 'zod';
 import { hashPassword } from '../utils/password';
 import { UserValidate } from '../validates/inputUser';
+import { StatusCodes } from 'http-status-codes';
 
 type CreateUserInput = z.infer<typeof UserValidate>;
 
@@ -134,7 +135,7 @@ export async function getDetailUserService(id: string): Promise<ServiceResponse<
         }
         const user = await db.select().from(User).where(eq(User.id, userId));
         return {
-            statusCode: 200,
+            statusCode: StatusCodes.OK,
             message: "Get detail user successfully",
             data: user
         }

@@ -8,7 +8,7 @@ export const User = mysqlTable('user', {
     full_name: varchar({ length: 255 }).notNull(),
     email: varchar({ length: 255 }).notNull().unique(),
     password: varchar({ length: 255 }).notNull(),
-    is_active: boolean().notNull().default(false),
+    is_active: boolean().notNull().default(true),
     created_at: timestamp().notNull().defaultNow(),
     updated_at: timestamp().notNull().defaultNow().onUpdateNow(),
 });
@@ -49,7 +49,9 @@ export const PermissionRole = mysqlTable('permission_role', {
 // Bảng login_attemp
 export const LoginAttemp = mysqlTable('login_attemp', {
     id: int({ unsigned: true }).autoincrement().primaryKey(),
-    userId: int({ unsigned: true }).notNull().references(() => User.id),
+    userId: int({ unsigned: true }).references(() => User.id),
+    device_info: json().notNull(),
+    ip_address: varchar({ length: 45 }).notNull(),
     is_success: boolean().notNull(),
     attempted_at: timestamp().notNull().defaultNow()
 });
