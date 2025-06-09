@@ -5,6 +5,7 @@ import {
 }
     from '../services/userService';
 import { UserType } from '../types/user';
+import { StatusCodes } from 'http-status-codes';
 
 export async function createUser(req: Request<{}, {}, UserType>, res: Response): Promise<void> {
     try {
@@ -57,9 +58,8 @@ export async function getDetailUser(req: Request<{ id: string }>, res: Response)
     try {
         const id = req.params.id;
         const user = await getDetailUserService(id);
-        res.status(200).json(user);
+        res.status(StatusCodes.OK).json(user);
     } catch (error) {
-        console.error('Error get detail user:', error);
-        res.status(500).json({ error: (error as Error).message });
+        res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({ error: (error as Error).message });
     }
 }
