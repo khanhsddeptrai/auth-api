@@ -86,7 +86,7 @@ export async function loginUserService(
         const accessToken = await generateToken(
             payload,
             process.env.ACCESS_TOKEN_SECRET_SIGNATURE as string,
-            "1h"
+            "30s"
         )
         const refreshToken = await generateToken(
             payload,

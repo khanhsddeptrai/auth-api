@@ -2,6 +2,7 @@ import { useForm, type SubmitHandler } from 'react-hook-form';
 import { Box, Button, TextField, Alert, Typography, Card as MuiCard, CardActions, Zoom } from '@mui/material';
 import { Link, useNavigate } from 'react-router-dom';
 import authorizedAxiosInstance from '../utils/authorizedAxios';
+import { toast } from 'react-toastify';
 
 interface LoginFormInputs {
     email: string;
@@ -39,7 +40,8 @@ function LoginForm() {
         const loginData = res.data
         localStorage.setItem('accessToken', loginData.data.accessToken);
         localStorage.setItem('refreshToken', loginData.data.refreshToken);
-        navigate('/');
+        toast.success(loginData.message)
+        navigate('/user');
         console.log('Response:', loginData);
     };
 
