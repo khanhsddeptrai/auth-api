@@ -6,7 +6,7 @@ import {
 import { authMiddleware } from '../middlewares/authMiddleware'
 
 router.post('/create', createUser);
-router.get('/get-all', authMiddleware.isAuthorized, getAllUser);
+router.get('/get-all', authMiddleware.isAuthorized("view_users"), getAllUser);
 router.patch('/update/:id', updateUser);
 router.delete('/delete/:id', deleteUser);
 router.get('/:id', getDetailUser);

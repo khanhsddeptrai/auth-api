@@ -1,5 +1,5 @@
 import axios from 'axios'
-import { toast } from 'react-toastify'
+// import { toast } from 'react-toastify'
 
 let authorizedAxiosInstance = axios.create()
 authorizedAxiosInstance.defaults.timeout = 1000 * 60 * 10 // 10 minutes
@@ -26,11 +26,11 @@ authorizedAxiosInstance.interceptors.response.use((response) => {
 }, (error) => {
     // Any status codes that falls outside the range of 2xx cause this function to trigger
     // Do something with response error
-    console.log(error.response?.status)
-    if (error.response?.status !== 410) {
-        console.log(error)
-        toast.error(error.response?.data?.message || error?.message)
-    }
+    // console.log(error.response?.status)
+    // if (error.response?.status !== 410) {
+    //     console.log(error)
+    //     toast.error(error.response?.data?.message || error?.message)
+    // }
     return Promise.reject(error)
 });
 

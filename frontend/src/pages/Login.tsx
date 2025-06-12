@@ -16,7 +16,7 @@ interface LoginResponse {
         accessToken: string;
         refreshToken: string;
         payload?: {
-            userId: string;
+            userId: number;
             email: string;
         }
     }
@@ -40,6 +40,7 @@ function LoginForm() {
         const loginData = res.data
         localStorage.setItem('accessToken', loginData.data.accessToken);
         localStorage.setItem('refreshToken', loginData.data.refreshToken);
+        localStorage.setItem('userInfo', JSON.stringify(loginData.data.payload));
         toast.success(loginData.message)
         navigate('/user');
         console.log('Response:', loginData);

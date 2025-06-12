@@ -7,7 +7,7 @@ import { eq, desc } from "drizzle-orm"
 import { comparePassword } from "../utils/password"
 import { generateToken } from "../utils/jwt"
 import { LoginAttemp } from "../drizzle/schema"
-import redis from "../utils/redis"
+// import redis from "../utils/redis"
 import { StatusCodes } from "http-status-codes"
 import ms from "ms"
 
@@ -22,14 +22,14 @@ export async function loginUserService(
         const lockoutDuration = ms("15 minutes") / 1000 // trong 15' nếu đăng nhập liên tục sai thì khóa
         const attemptWindow = ms("5 minutes") / 1000 // trong 5 phút nếu không có yêu cầu đăng nhập thì reset lại
         // Kiểm tra trạng thái khóa của IP
-        const isIpLocked = await redis.exists(`lockout:ip:${ip_address}`)
-        if (isIpLocked) {
-            const ttl = await redis.ttl(`lockout:ip:${ip_address}`)
-            return {
-                statusCode: StatusCodes.TOO_MANY_REQUESTS,
-                message: `Lỗi tải! Thử lại sau ${Math.ceil(ttl / 60)} phút.`
-            }
-        }
+        // const isIpLocked = await redis.exists(`lockout:ip:${ip_address}`)
+        // if (isIpLocked) {
+        //     const ttl = await redis.ttl(`lockout:ip:${ip_address}`)
+        //     return {
+        //         statusCode: StatusCodes.TOO_MANY_REQUESTS,
+        //         message: `Lỗi tải! Thử lại sau ${Math.ceil(ttl / 60)} phút.`
+        //     }
+        // }
         // Kiểm tra người dùng tồn tại
         const existingUser = await db.select().from(User).where(eq(User.email, email)).limit(1)
 
@@ -56,28 +56,29 @@ export async function loginUserService(
         })
 
         if (!isMatch || !userId) {
-            await redis.multi()
-                .incr(`attempts:ip:${ip_address}`)
-                .expire(`attempts:ip:${ip_address}`, attemptWindow)
-                .exec()
-            const attempts = await redis.get(`attempts:ip:${ip_address}`) || "0"
-            // console.log("attempts: ", attempts)
-            const remainingAttempts = maxAttempts - (parseInt(attempts) || 0)
-            if (parseInt(attempts) >= maxAttempts) {
-                await redis.setex(`lockout:ip:${ip_address}`, lockoutDuration, "locked")
-                await redis.del(`attempts:ip:${ip_address}`)
-                return {
-                    statusCode: StatusCodes.TOO_MANY_REQUESTS,
-                    message: "IP của bạn bị khóa do quá nhiều lần thử sai. Thử lại sau 15 phút."
-                }
-            }
+            // await redis.multi()
+            //     .incr(`attempts:ip:${ip_address}`)
+            //     .expire(`attempts:ip:${ip_address}`, attemptWindow)
+            //     .exec()
+            // const attempts = await redis.get(`attempts:ip:${ip_address}`) || "0"
+            // const remainingAttempts = maxAttempts - (parseInt(attempts) || 0)
+            // if (parseInt(attempts) >= maxAttempts) {
+            //     await redis.setex(`lockout:ip:${ip_address}`, lockoutDuration, "locked")
+            //     await redis.del(`attempts:ip:${ip_address}`)
+            //     return {
+            //         statusCode: StatusCodes.TOO_MANY_REQUESTS,
+            //         message: "IP của bạn bị khóa do quá nhiều lần thử sai. Thử lại sau 15 phút."
+            //     }
+            // }
             return {
                 statusCode: StatusCodes.UNAUTHORIZED,
-                message: `Email hoặc mật khẩu không đúng. Còn ${remainingAttempts} lần thử.`
+                // message: `Email hoặc mật khẩu không đúng. Còn ${remainingAttempts} lần thử.`
+                message: `Email hoặc mật khẩu không đúng `
+
             }
         }
 
-        await redis.del(`attempts:ip:${ip_address}`)
+        // await redis.del(`attempts:ip:${ip_address}`)
 
         const payload = {
             id: existingUser[0].id,
