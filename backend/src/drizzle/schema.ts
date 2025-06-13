@@ -62,6 +62,7 @@ export const Session = mysqlTable('session', {
     userId: int({ unsigned: true }).notNull().references(() => User.id),
     refresh_token: varchar({ length: 255 }).notNull(),
     created_at: timestamp().notNull().defaultNow(),
+    updated_at: timestamp().notNull().defaultNow(),
     expires_at: timestamp().notNull(),
     ip_address: varchar({ length: 45 }).notNull(),
     is_valid: boolean().notNull().default(false),

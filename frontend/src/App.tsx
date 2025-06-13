@@ -49,9 +49,10 @@ function App() {
       <Routes >
         <Route path='/' element={<Home />} />
 
-        <Route element={<UnAuthorizedRoutes />}>
-          <Route path='/login' element={<Login />} />
-        </Route>
+        {/* <Route element={<UnAuthorizedRoutes />}>
+          
+        </Route> */}
+        <Route path='/login' element={<Login />} />
 
         <Route element={<ProtectedRoutes />}>
           <Route path='/user' element={<UserPage />} />

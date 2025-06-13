@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
 import { LoginInput } from '../types/auth';
-import { loginUserService } from '../services/authService';
+import { loginUserService, logoutUserService, refreshTokenService } from '../services/authService';
 import { StatusCodes } from 'http-status-codes';
 import useragent from 'useragent';
 import requestIp from 'request-ip';
@@ -16,4 +16,30 @@ export async function loginUser(req: Request<{}, {}, LoginInput>, res: Response)
     } catch (error) {
         res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({ error: (error as Error).message });
     }
+}
+
+export async function refreshTokenController(req: Request<{}, {}, { refreshToken: string }>, res: Response): Promise<void> {
+    try {
+        const { refreshToken } = req.body;
+        const result = await refreshTokenService(refreshToken);
+        res.status(result.statusCode).json(result)
+
+    } catch (error) {
+        res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({ error: (error as Error).message });
+    }
+}
+
+export async function logoutUserController(
+    req: Request<{}, {}, { refreshToken: string, accessToken: string }>,
+    res: Response
+): Promise<void> {
+    try {
+        const { accessToken, refreshToken } = req.body;
+        const result = await logoutUserService(accessToken, refreshToken);
+        res.status(result.statusCode).json(result)
+
+    } catch (error) {
+        res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({ error: (error as Error).message });
+    }
+
 }

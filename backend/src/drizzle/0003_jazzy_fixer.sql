@@ -1,0 +1,1 @@
+ALTER TABLE `session` ADD `updated_at` timestamp DEFAULT (now()) NOT NULL;

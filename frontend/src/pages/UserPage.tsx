@@ -5,7 +5,7 @@ import { Button } from "@mui/material";
 import { useNavigate } from "react-router-dom";
 
 interface User {
-    id: string;
+    id: number;
     full_name: string;
     email: string;
     is_active: boolean;
@@ -17,9 +17,20 @@ interface UserDataRespone {
     data: User[]
 }
 
+interface LogoutResponse {
+    statusCode: number;
+    message: string;
+}
+
+interface LogoutData {
+    accessToken: string | null;
+    refreshToken: string | null;
+}
+
 function UserPage(): React.ReactElement {
     const [listUser, setListUser] = useState<User[]>([])
     const [loading, setLoading] = useState(true);
+    const [logoutLoading, setLogoutLoading] = useState(false);
     const navigate = useNavigate()
 
     useEffect(() => {
@@ -40,12 +51,29 @@ function UserPage(): React.ReactElement {
         fetchUserData();
     }, []);
 
-    function handleLogout(): void {
-        localStorage.removeItem('accessToken')
-        localStorage.removeItem('refreshToken')
-        localStorage.removeItem('userInfo')
-        setListUser([])
-        navigate('/login')
+    async function handleLogout() {
+        setLogoutLoading(true)
+        try {
+            const accessToken = localStorage.getItem('accessToken')
+            const refreshToken = localStorage.getItem('refreshToken')
+            const logoutData: LogoutData = { accessToken, refreshToken }
+            const res = await authorizedAxiosInstance.patch<LogoutResponse>(`http://localhost:8080/api/auth/logout`, logoutData);
+            if (res.data.statusCode === 200) {
+                localStorage.removeItem("accessToken");
+                localStorage.removeItem("refreshToken");
+                localStorage.removeItem("userInfo");
+                setListUser([])
+                toast.success(res.data.message);
+                navigate("/login");
+            } else {
+                toast.error(res.data.message);
+            }
+        } catch (error: any) {
+            const message = error.response?.data?.message
+            toast.error(message);
+        } finally {
+            setLogoutLoading(false);
+        }
     }
 
     if (loading) {
