@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { LoginInput } from '../types/auth';
+import { LoginInput, PasswordInput } from '../types/auth';
 import { loginUserService, logoutUserService, refreshTokenService } from '../services/authService';
 import { StatusCodes } from 'http-status-codes';
 import useragent from 'useragent';
@@ -43,3 +43,4 @@ export async function logoutUserController(
     }
 
 }
+

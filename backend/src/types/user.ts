@@ -7,3 +7,6 @@ export interface UserType {
     created_at?: Date;
 }
 
+export interface UserTypeExist extends UserType {
+    id: number;
+}

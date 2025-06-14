@@ -3,6 +3,7 @@ import { Box, Button, TextField, Alert, Typography, Card as MuiCard, CardActions
 import { Link, useNavigate } from 'react-router-dom';
 import authorizedAxiosInstance from '../utils/authorizedAxios';
 import { toast } from 'react-toastify';
+import type React from 'react';
 
 interface LoginFormInputs {
     email: string;
@@ -22,7 +23,7 @@ interface LoginResponse {
     }
 }
 
-function LoginForm() {
+function LoginForm(): React.ReactElement {
     const navigate = useNavigate();
     const {
         register,

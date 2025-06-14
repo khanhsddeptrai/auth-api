@@ -1,15 +1,17 @@
-import { LoginInput, PayloadType } from "../types/auth"
+import { LoginInput, PasswordInput, PayloadType } from "../types/auth"
 import { ServiceResponse } from "../types/common"
 import { LoginResponseData } from "../types/auth"
 import { db } from "../config/db"
 import { Session, User } from "../drizzle/schema"
 import { eq, desc } from "drizzle-orm"
-import { comparePassword } from "../utils/password"
+import { comparePassword, hashPassword } from "../utils/password"
 import { generateToken, verifyToken } from "../utils/jwt"
 import { LoginAttemp } from "../drizzle/schema"
 // import redis from "../utils/redis"
 import { StatusCodes } from "http-status-codes"
 import ms from "ms"
+import { checkExistingUser } from "../utils/user"
+import { set } from "zod"
 
 export async function loginUserService(
     dataLogin: LoginInput,
@@ -141,20 +143,16 @@ export async function refreshTokenService(refresh_token: string): Promise<Servic
             };
         }
 
-        const existingUser = await db
-            .select()
-            .from(User)
-            .where(eq(User.id, payload.id))
-            .limit(1)
+        const existingUser = await checkExistingUser(payload.id)
 
-        if (existingUser.length === 0) {
+        if (!existingUser) {
             return {
                 statusCode: StatusCodes.NOT_FOUND,
                 message: "User not found!"
             }
         }
 
-        if (existingUser[0].is_active === false) {
+        if (existingUser.is_active === false) {
             return {
                 statusCode: StatusCodes.FORBIDDEN,
                 message: "User has been locked"
@@ -175,8 +173,8 @@ export async function refreshTokenService(refresh_token: string): Promise<Servic
         }
 
         const newPayload = {
-            id: existingUser[0].id,
-            email: existingUser[0].email
+            id: existingUser.id,
+            email: existingUser.email
         };
 
         const accessToken = await generateToken(

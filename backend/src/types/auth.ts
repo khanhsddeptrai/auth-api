@@ -16,3 +16,9 @@ export interface LoginResponseData {
         email: string;
     };
 }
+
+export interface PasswordInput {
+    odlPassword: string;
+    newPassword: string;
+    confirmPassword: string;
+}

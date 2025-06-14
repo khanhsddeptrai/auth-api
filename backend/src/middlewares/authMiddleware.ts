@@ -11,8 +11,8 @@ interface AuthenticatedRequest extends Request {
     user?: {
         id: number;
         email: string;
-        roles: string[];
-        permissions: string[];
+        roles?: string[];
+        permissions?: string[];
     };
 }
 
@@ -44,7 +44,7 @@ async function checkPermission(userId: number, requiredPermission: string): Prom
     return permissionNames.includes(requiredPermission)
 }
 
-function isAuthorized(requiredPermission: string) {
+export function isAuthorized(requiredPermission: string) {
     return async (req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> => {
         const accessToken = req.headers.authorization
         if (!accessToken) {
@@ -109,7 +109,6 @@ function isAuthorized(requiredPermission: string) {
                     return;
                 }
             }
-
             next()
         } catch (error: unknown) {
             const authError = error as AuthError;
@@ -126,7 +125,53 @@ function isAuthorized(requiredPermission: string) {
     }
 }
 
-export const authMiddleware = {
-    isAuthorized
+export async function isAuthOnly(req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> {
+    const accessToken = req.headers.authorization
+    if (!accessToken) {
+        res.status(StatusCodes.UNAUTHORIZED).json({
+            message: "Token not found"
+        })
+        return
+    }
+    try {
+        const accessTokenDecoded = await verifyToken(
+            accessToken.substring("Bearer ".length),
+            process.env.ACCESS_TOKEN_SECRET_SIGNATURE as string
+        )
+        if (!accessTokenDecoded.id) {
+            res.status(StatusCodes.UNAUTHORIZED).json({
+                message: "Invalid token payload"
+            })
+            return
+        }
+        const user = await db
+            .select()
+            .from(User)
+            .where(eq(User.id, accessTokenDecoded.id))
+            .limit(1)
+        if (user.length === 0) {
+            res.status(StatusCodes.UNAUTHORIZED).json({
+                message: "User not found"
+            })
+            return
+        }
+        req.user = {
+            id: user[0].id,
+            email: user[0].email
+        }
+        next()
+    } catch (error: unknown) {
+        const authError = error as AuthError;
+        if (authError.message.includes('jwt expired')) {
+            res.status(StatusCodes.UNAUTHORIZED).json({
+                message: 'Token has expired! Need to refresh your access token',
+            });
+            return;
+        }
+        res.status(StatusCodes.UNAUTHORIZED).json({
+            message: "Unauthorized! Please login again"
+        })
+    }
 }
+
 

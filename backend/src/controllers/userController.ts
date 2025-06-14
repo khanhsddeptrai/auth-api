@@ -1,11 +1,12 @@
 import { Request, Response } from 'express';
 import {
     createNewUser, updateUserService, getAllUserService, deleteUserService,
-    getDetailUserService
+    getDetailUserService, changePassword
 }
     from '../services/userService';
 import { UserType } from '../types/user';
 import { StatusCodes } from 'http-status-codes';
+import { PasswordInput } from '../types/auth';
 
 export async function createUser(req: Request<{}, {}, UserType>, res: Response): Promise<void> {
     try {
@@ -61,5 +62,16 @@ export async function getDetailUser(req: Request<{ id: string }>, res: Response)
         res.status(StatusCodes.OK).json(user);
     } catch (error) {
         res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({ error: (error as Error).message });
+    }
+}
+
+export async function changePasswordController(req: Request<{ userId: string }, {}, PasswordInput>, res: Response): Promise<void> {
+    const { odlPassword, newPassword, confirmPassword } = req.body
+    const userId = req.params.userId
+    try {
+        const result = await changePassword(userId, req.body)
+        res.status(result.statusCode).json(result)
+    } catch (error: unknown) {
+        res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({ error: (error as Error).message })
     }
 }

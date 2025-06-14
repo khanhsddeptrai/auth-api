@@ -4,9 +4,11 @@ import { eq, ne, and } from 'drizzle-orm';
 import { UserType } from '../types/user';
 import { User } from '../drizzle/schema';
 import { z } from 'zod';
-import { hashPassword } from '../utils/password';
+import { comparePassword, hashPassword } from '../utils/password';
 import { UserValidate } from '../validates/inputUser';
 import { StatusCodes } from 'http-status-codes';
+import { checkExistingUser } from '../utils/user';
+import { PasswordInput } from '../types/auth';
 
 type CreateUserInput = z.infer<typeof UserValidate>;
 
@@ -141,5 +143,59 @@ export async function getDetailUserService(id: string): Promise<ServiceResponse<
         }
     } catch (error) {
         throw new Error(`Failed to fetch users: ${(error as Error).message}`);
+    }
+}
+
+export async function changePassword(userId: string, data: PasswordInput): Promise<ServiceResponse<{}>> {
+    try {
+        const existingUser = await checkExistingUser(parseInt(userId))
+        if (!existingUser) {
+            return {
+                statusCode: StatusCodes.NOT_FOUND,
+                message: "User not found!"
+            }
+        }
+
+        const { odlPassword, newPassword, confirmPassword } = data
+
+        if (!odlPassword || !newPassword || !confirmPassword) {
+            return {
+                statusCode: StatusCodes.BAD_REQUEST,
+                message: "Passwords input is required!"
+            }
+        }
+
+        const checkPassword = await comparePassword(odlPassword, existingUser.password)
+        if (!checkPassword) {
+            return {
+                statusCode: StatusCodes.UNAUTHORIZED,
+                message: `Old password is incorrect `
+            }
+        }
+
+        if (newPassword !== confirmPassword) {
+            return {
+                statusCode: StatusCodes.UNAUTHORIZED,
+                message: `New password is not the same`
+            }
+        }
+
+        const newPasswordHash = await hashPassword(newPassword)
+
+        await db
+            .update(User)
+            .set({ password: newPasswordHash })
+            .where(eq(User.id, parseInt(userId)))
+
+        return {
+            statusCode: StatusCodes.OK,
+            message: "Change password successfully!"
+        }
+
+    } catch (error) {
+        return {
+            statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+            message: `Change password failed: ${(error as Error).message}`
+        }
     }
 }
