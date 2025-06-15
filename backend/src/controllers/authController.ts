@@ -30,12 +30,12 @@ export async function refreshTokenController(req: Request<{}, {}, { refreshToken
 }
 
 export async function logoutUserController(
-    req: Request<{}, {}, { refreshToken: string, accessToken: string }>,
+    req: Request<{}, {}, { sessionId: number, userId: number }>,
     res: Response
 ): Promise<void> {
     try {
-        const { accessToken, refreshToken } = req.body;
-        const result = await logoutUserService(accessToken, refreshToken);
+        const { sessionId, userId } = req.body
+        const result = await logoutUserService(sessionId, userId)
         res.status(result.statusCode).json(result)
 
     } catch (error) {

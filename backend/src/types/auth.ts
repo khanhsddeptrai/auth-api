@@ -6,11 +6,13 @@ export interface LoginInput {
 export interface PayloadType {
     id: number;
     email: string;
+    // sessionId: number
 }
 
 export interface LoginResponseData {
     accessToken: string;
     refreshToken: string;
+    sessionId?: number;
     payload: {
         id: number;
         email: string;

@@ -11,7 +11,6 @@ import { LoginAttemp } from "../drizzle/schema"
 import { StatusCodes } from "http-status-codes"
 import ms from "ms"
 import { checkExistingUser } from "../utils/user"
-import { set } from "zod"
 
 export async function loginUserService(
     dataLogin: LoginInput,
@@ -84,28 +83,30 @@ export async function loginUserService(
 
         const payload = {
             id: existingUser[0].id,
-            email: existingUser[0].email
+            email: existingUser[0].email,
         }
         const accessToken = await generateToken(
             payload,
             process.env.ACCESS_TOKEN_SECRET_SIGNATURE as string,
-            "1h"
+            "30s"
         )
         const refreshToken = await generateToken(
             payload,
             process.env.REFRESH_TOKEN_SECRET_SIGNATURE as string,
             "7 days"
         )
-        const expiresAt = new Date(Date.now() + 60 * 60 * 1000);
+        const expiresAt = new Date(Date.now() + ms("7 days") + ms("7h"));
 
-        await db.insert(Session).values({
+        let session = await db.insert(Session).values({
             userId,
             refresh_token: refreshToken,
             expires_at: expiresAt,
             ip_address,
             is_valid: true,
             device_info
-        })
+        }).$returningId()
+
+        const sessionId = session[0].id
 
         return {
             statusCode: StatusCodes.OK,
@@ -113,7 +114,8 @@ export async function loginUserService(
             data: {
                 accessToken,
                 refreshToken,
-                payload
+                payload,
+                sessionId
             }
         }
     } catch (error) {
@@ -199,28 +201,12 @@ export async function refreshTokenService(refresh_token: string): Promise<Servic
     }
 }
 
-export async function logoutUserService(accessToken: string, refreshToken: string): Promise<ServiceResponse<{}>> {
+export async function logoutUserService(sessionId: number, userId: number): Promise<ServiceResponse<{}>> {
     try {
-        if (!refreshToken) {
-            return {
-                statusCode: StatusCodes.BAD_REQUEST,
-                message: "Refresh token is required"
-            }
-        }
-        let payload: PayloadType
-        try {
-            payload = await verifyToken(accessToken, process.env.ACCESS_TOKEN_SECRET_SIGNATURE as string)
-        } catch (error) {
-            return {
-                statusCode: StatusCodes.UNAUTHORIZED,
-                message: "Access token is invalid or expired!"
-            };
-        }
-
         const existingUser = await db
             .select()
             .from(User)
-            .where(eq(User.id, payload.id))
+            .where(eq(User.id, userId))
             .limit(1);
 
         if (existingUser.length === 0) {
@@ -233,7 +219,7 @@ export async function logoutUserService(accessToken: string, refreshToken: strin
         const existingSession = await db
             .select()
             .from(Session)
-            .where(eq(Session.refresh_token, refreshToken))
+            .where(eq(Session.id, sessionId))
             .limit(1);
 
         if (existingSession.length === 0) {
@@ -243,17 +229,20 @@ export async function logoutUserService(accessToken: string, refreshToken: strin
             };
         }
 
-        if (existingSession[0].userId !== payload.id) {
+        if (existingSession[0].is_valid === false) {
             return {
-                statusCode: StatusCodes.FORBIDDEN,
-                message: "Refresh token does not belong to this user"
+                statusCode: StatusCodes.NOT_FOUND,
+                message: "Session is invalid"
             }
         }
 
         await db
             .update(Session)
-            .set({ is_valid: false })
-            .where(eq(Session.refresh_token, refreshToken))
+            .set({
+                is_valid: false,
+                updated_at: new Date(Date.now() + ms("7h"))
+            })
+            .where(eq(Session.id, sessionId))
 
         return {
             statusCode: StatusCodes.OK,
@@ -263,7 +252,7 @@ export async function logoutUserService(accessToken: string, refreshToken: strin
     } catch (error) {
         return {
             statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
-            message: `Refresh token failed: ${(error as Error).message}`
+            message: `Logout failed: ${(error as Error).message}`
         };
     }
 }

@@ -113,7 +113,7 @@ export function isAuthorized(requiredPermission: string) {
         } catch (error: unknown) {
             const authError = error as AuthError;
             if (authError.message.includes('jwt expired')) {
-                res.status(StatusCodes.UNAUTHORIZED).json({
+                res.status(StatusCodes.GONE).json({
                     message: 'Token has expired! Need to refresh your access token',
                 });
                 return;
